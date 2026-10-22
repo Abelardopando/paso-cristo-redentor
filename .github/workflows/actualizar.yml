@@ -1,0 +1,36 @@
+name: Actualizador Automatico
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Se ejecuta cada 15 minutos
+  workflow_dispatch:        # Permite probarlo manualmente
+
+jobs:
+  ejecutar-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar librerias
+        run: |
+          pip install google-generativeai feedparser
+
+      - name: Ejecutar script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python main.py
+
+      - name: Guardar estado actualizado
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add status.json || true
+          git commit -m "Auto-update: estado del paso actualizado" || true
+          git push || true
