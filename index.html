@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paso Cristo Redentor - Estado en Tiempo Real</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.95); }
+    }
+    .pulse-dot { animation: pulse-slow 2s infinite ease-in-out; }
+  </style>
+</head>
+<body class="bg-[#0b0f17] text-slate-100 min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 selection:bg-orange-500 selection:text-white">
+
+  <!-- Header principal -->
+  <header class="w-full max-w-xl text-center my-6">
+    <div class="flex items-center justify-center gap-2 mb-1">
+      <span class="text-3xl">🏔️</span>
+      <h1 class="text-3xl font-black tracking-tight text-white">Paso Cristo Redentor</h1>
+    </div>
+    <p class="text-slate-400 text-xs sm:text-sm font-medium">
+      Estado en tiempo real del Complejo Los Libertadores y Paso Internacional
+    </p>
+  </header>
+
+  <!-- Tarjeta contenedora principal -->
+  <main class="w-full max-w-xl bg-[#151c28] rounded-2xl border border-slate-700/60 shadow-2xl overflow-hidden mb-6">
+    
+    <!-- Banner de Estado Destacado (Cambia según status) -->
+    <div id="status-badge" class="p-5 text-center transition-all duration-300 bg-orange-500 text-slate-950">
+      <div class="flex items-center justify-center gap-2 font-black text-xl sm:text-2xl uppercase tracking-wide">
+        <span id="status-icon">⚠️</span>
+        <h2 id="status-title">CARGANDO...</h2>
+      </div>
+      <p id="status-subtitle" class="text-xs sm:text-sm font-semibold opacity-90 mt-0.5">
+        Obteniendo información oficial...
+      </p>
+    </div>
+
+    <!-- Contenido del Reporte -->
+    <div class="p-5 sm:p-6 space-y-5">
+      
+      <!-- Bloque del Reporte Oficial -->
+      <div>
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+          Último Reporte Oficial
+        </h3>
+        <div class="bg-[#0f141f] p-4 rounded-xl border border-slate-800 text-slate-200 text-sm leading-relaxed">
+          <div id="status-summary" class="whitespace-pre-line">
+            Obteniendo el último comunicado de Pasos Fronterizos...
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid de 2 columnas de resumen -->
+      <div class="grid grid-cols-2 gap-3 pt-1">
+        <div class="bg-[#0f141f] p-3.5 rounded-xl border border-slate-800/80">
+          <span class="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Vehículos Permitidos</span>
+          <span id="allowed-vehicles" class="text-slate-100 font-bold text-xs sm:text-sm mt-0.5 block">
+            --
+          </span>
+        </div>
+        <div class="bg-[#0f141f] p-3.5 rounded-xl border border-slate-800/80">
+          <span class="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Última Actualización</span>
+          <span id="last-updated" class="text-slate-100 font-bold text-xs sm:text-sm mt-0.5 block">
+            --
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Pie de tarjeta con indicador En Vivo -->
+    <div class="bg-[#0d111a] px-5 py-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400 font-medium">
+      <div class="flex items-center gap-2">
+        <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 pulse-dot"></span>
+        <span>Sincronizado cada 15 min</span>
+      </div>
+      <button onclick="fetchStatus()" class="hover:text-slate-200 underline transition-colors">
+        Actualizar ahora
+      </button>
+    </div>
+  </main>
+
+  <!-- Sección Mapa de Tráfico Waze -->
+  <section class="w-full max-w-xl bg-[#151c28] rounded-2xl border border-slate-700/60 shadow-2xl p-4 mb-8">
+    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+      <span>🚗</span> Tráfico en Cordillera (Waze Live)
+    </h3>
+    <div class="w-full h-72 sm:h-80 rounded-xl overflow-hidden border border-slate-800">
+      <iframe 
+        src="https://embed.waze.com/iframe?zoom=10&lat=-32.8302&lon=-70.0825&ct=livemap" 
+        width="100%" 
+        height="100%" 
+        allowfullscreen
+        style="border:0;"
+        loading="lazy">
+      </iframe>
+    </div>
+  </section>
+
+  <!-- Lógica de lectura de datos -->
+  <script>
+    async function fetchStatus() {
+      try {
+        const response = await fetch('status.json?t=' + new Date().getTime());
+        if (!response.ok) throw new Error("No se pudo leer status.json");
+        const data = await response.json();
+
+        const badge = document.getElementById('status-badge');
+        const title = document.getElementById('status-title');
+        const subtitle = document.getElementById('status-subtitle');
+        const icon = document.getElementById('status-icon');
+        const summary = document.getElementById('status-summary');
+        const vehicles = document.getElementById('allowed-vehicles');
+        const updated = document.getElementById('last-updated');
+
+        const estadoRaw = (data.estado || "").toUpperCase();
+
+        // Asignación de datos
+        title.textContent = estadoRaw || "DESCONOCIDO";
+        summary.innerHTML = data.resumen ? data.resumen.replace(/\n/g, '<br>') : "Sin información disponible.";
+        vehicles.textContent = data.vehiculos_permitidos || "No especificado";
+        updated.textContent = data.ultima_actualizacion || "Reciente";
+
+        // Ajuste dinámico del Banner según el estado
+        if (estadoRaw.includes("HABILITADO") && !estadoRaw.includes("ETAPAS")) {
+          badge.className = "p-5 text-center transition-all duration-300 bg-emerald-500 text-slate-950";
+          icon.textContent = "✅";
+          subtitle.textContent = "Paso abierto para tránsito habitual";
+        } else if (estadoRaw.includes("CERRADO") || estadoRaw.includes("SUSPENDIDO")) {
+          badge.className = "p-5 text-center transition-all duration-300 bg-rose-600 text-white";
+          icon.textContent = "⛔";
+          subtitle.textContent = "Tránsito suspendido por condiciones climáticas o de seguridad";
+        } else {
+          // Etapas / Precaución / Parcial
+          badge.className = "p-5 text-center transition-all duration-300 bg-orange-500 text-slate-950";
+          icon.textContent = "⚠️";
+          subtitle.textContent = "Revisa las restricciones de horario y tipo de vehículo abajo";
+        }
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('status-title').textContent = "ERROR DE CONEXIÓN";
+        document.getElementById('status-subtitle').textContent = "No se pudo sincronizar con status.json";
+      }
+    }
+
+    fetchStatus();
+  </script>
+</body>
+</html>
