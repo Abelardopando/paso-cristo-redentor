@@ -21,7 +21,7 @@ def obtener_ultimo_reporte():
         return None
 
 def procesar_con_gemini(texto_informe):
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.0-flash")
     prompt = f"""
     Analiza este reporte de Pasos Fronterizos y extrae la información sobre el Paso Cristo Redentor / Los Libertadores.
     Texto del reporte: "{texto_informe}"
