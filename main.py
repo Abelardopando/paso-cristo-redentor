@@ -1,16 +1,16 @@
 import json
 from datetime import datetime
-import pytz
+from zoneinfo import ZoneInfo
 
 def actualizar_estado():
-    # Zona horaria de Chile para que la hora del comunicado sea exacta a la local
-    chile_tz = pytz.timezone('America/Santiago')
+    # Zona horaria oficial de Chile usando la librería nativa de Python
+    chile_tz = ZoneInfo('America/Santiago')
     ahora = datetime.now(chile_tz)
     
     # Formato legible: Ej. "24/10/2026 15:30 hrs"
     hora_formateada = ahora.strftime('%d/%m/%Y %H:%M hrs')
 
-    # Datos del reporte (puedes ajustar esta estructura o conectarla a tu fuente de scraping)
+    # Datos del reporte
     data = {
         "estado": "ABIERTO - ETAPAS",
         "resumen": "Reapertura gradual por etapas, iniciando habilitación con transporte de carga.",
