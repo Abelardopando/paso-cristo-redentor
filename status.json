@@ -2,5 +2,6 @@
     "estado": "ACTUALIZACIÓN PENDIENTE",
     "resumen": "El bot está reintentando la conexión con los servidores oficiales de la cordillera.",
     "vehiculos_permitidos": "Pendiente de lectura",
-    "ultima_actualizacion": "24/10/2026 03:57 a. m."
+    "hora_comunicado": "24/10/2026 04:04 a. m.",
+    "ultima_sincronizacion": "24/10/2026 04:04 a. m."
 }
