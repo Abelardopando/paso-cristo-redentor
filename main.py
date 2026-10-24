@@ -1,20 +1,40 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import requests
 import xml.etree.ElementTree as ET
 import os
 from email.utils import parsedate_to_datetime
+from bs4 import BeautifulSoup
 
 def obtener_tiempo_relativo(pub_date_str):
     if not pub_date_str:
-        return "Reciente"
+        return "Hace un momento"
     try:
         chile_tz = ZoneInfo('America/Santiago')
         ahora_chile = datetime.now(chile_tz)
         
-        # Parsear fecha del RSS (viene en UTC u otro formato estándar)
-        pub_dt = parsedate_to_datetime(pub_date_str)
+        pub_dt = None
+        # Intentar formato RFC 2822 estándar (común en RSS)
+        try:
+            pub_dt = parsedate_to_datetime(pub_date_str)
+        except Exception:
+            pass
+            
+        # Si falla, intentar formato ISO 8601
+        if not pub_dt:
+            try:
+                clean_date = pub_date_str.replace('Z', '+00:00')
+                pub_dt = datetime.fromisoformat(clean_date)
+            except Exception:
+                pass
+                
+        if not pub_dt:
+            return "Hace un momento"
+            
+        if pub_dt.tzinfo is None:
+            pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+            
         pub_dt_chile = pub_dt.astimezone(chile_tz)
         
         diff = ahora_chile - pub_dt_chile
@@ -35,7 +55,7 @@ def obtener_tiempo_relativo(pub_date_str):
             return f"Hace {dias} día" if dias == 1 else f"Hace {dias} días"
     except Exception as e:
         print(f"Error calculando tiempo relativo: {e}")
-        return "Reciente"
+        return "Hace un momento"
 
 def extraer_estado_rss():
     chile_tz = ZoneInfo('America/Santiago')
@@ -50,7 +70,6 @@ def extraer_estado_rss():
         except:
             pass
 
-    old_resumen = old_data.get('resumen', '')
     rss_url = "https://rss.app/feeds/GnQwSF23WseTfEtQ.xml"
     
     nuevo_estado = old_data.get('estado', 'VERIFICANDO...')
@@ -75,9 +94,16 @@ def extraer_estado_rss():
                 description = desc_el.text if desc_el.text is not None and desc_el.text else ""
                 pub_date_raw = pub_date_el.text if pub_date_el is not None and pub_date_el.text else ""
                 
-                texto_completo = f"{title}\n\n{description}".strip()
+                # Limpiar HTML para evitar que el texto se corte en palabras como "septie"
+                description_limpia = BeautifulSoup(description, 'html.parser').get_text(strip=True) if description else ""
+                
+                if description_limpia and len(description_limpia) > len(title):
+                    texto_completo = description_limpia
+                else:
+                    texto_completo = title
+                
                 if texto_completo:
-                    nuevo_resumen = texto_completo[:500]
+                    nuevo_resumen = texto_completo
                     tiempo_relativo = obtener_tiempo_relativo(pub_date_raw)
                     
                     texto_upper = texto_completo.upper()
