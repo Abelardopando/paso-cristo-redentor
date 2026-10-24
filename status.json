@@ -1,6 +1,6 @@
 {
-    "estado": "ABIERTO - ETAPAS",
-    "resumen": "Reapertura gradual por etapas, iniciando habilitación con transporte de carga.",
-    "vehiculos_permitidos": "Solo camiones (Buses y particulares atentos a nuevas pautas)",
-    "ultima_actualizacion": "24/10/2026 03:43 a. m."
+    "estado": "ACTUALIZACIÓN PENDIENTE",
+    "resumen": "El bot está reintentando la conexión con los servidores oficiales de la cordillera.",
+    "vehiculos_permitidos": "Pendiente de lectura",
+    "ultima_actualizacion": "24/10/2026 03:57 a. m."
 }
