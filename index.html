@@ -73,11 +73,11 @@
 
     </div>
 
-    <!-- Pie de tarjeta con indicador En Vivo -->
+    <!-- Pie de tarjeta con indicador de Sincronización -->
     <div class="bg-[#0d111a] px-5 py-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400 font-medium">
       <div class="flex items-center gap-2">
         <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 pulse-dot"></span>
-        <span>Sincronizado automáticamente</span>
+        <span id="sync-time">Verificado: Sincronizando...</span>
       </div>
       <button onclick="fetchStatus()" class="hover:text-slate-200 underline transition-colors">
         Actualizar ahora
@@ -102,7 +102,7 @@
     </div>
   </section>
 
-  <!-- Lógica de lectura de datos y colores dinámicos -->
+  <!-- Lógica de lectura de datos -->
   <script>
     async function fetchStatus() {
       try {
@@ -117,6 +117,7 @@
         const summary = document.getElementById('status-summary');
         const vehicles = document.getElementById('allowed-vehicles');
         const updated = document.getElementById('last-updated');
+        const syncTime = document.getElementById('sync-time');
 
         const estadoRaw = (data.estado || "").toUpperCase();
 
@@ -124,9 +125,12 @@
         title.textContent = estadoRaw || "DESCONOCIDO";
         summary.innerHTML = data.resumen ? data.resumen.replace(/\n/g, '<br>') : "Sin información disponible.";
         vehicles.textContent = data.vehiculos_permitidos || "No especificado";
-        updated.textContent = data.ultima_actualizacion || "No especificada";
+        
+        // Aquí se separan los dos tiempos claramente:
+        updated.textContent = data.hora_comunicado || "No especificada";
+        syncTime.textContent = "Última revisión del bot: " + (data.ultima_sincronizacion || "Reciente");
 
-        // Ajuste dinámico estricto de colores según estado
+        // Colores dinámicos
         if (estadoRaw.includes("HABILITADO") && !estadoRaw.includes("ETAPAS")) {
           badge.className = "p-5 text-center transition-all duration-300 bg-emerald-500 text-slate-950";
           icon.textContent = "✅";
