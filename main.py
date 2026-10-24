@@ -10,7 +10,7 @@ def extraer_estado_rss():
     ahora = datetime.now(chile_tz)
     hora_actual_str = ahora.strftime('%d/%m/%Y %I:%M %p').replace('AM', 'a. m.').replace('PM', 'p. m.')
 
-    # Cargar datos anteriores para respaldo y comparación de cambios
+    # Cargar datos anteriores para respaldo seguro
     old_data = {}
     if os.path.exists('status.json'):
         try:
@@ -22,58 +22,52 @@ def extraer_estado_rss():
     old_resumen = old_data.get('resumen', '')
     old_hora_comunicado = old_data.get('hora_comunicado', hora_actual_str)
 
-    # 🔗 REEMPLAZA ESTA LÍNEA CON TU ENLACE RSS REAL
-    rss_url = "https://rss.app/feeds/GnQwSF23WseTfEtQ.xml" 
+    rss_url = "https://rss.app/feeds/GnQwSF23WseTfEtQ.xml"
     
-    nuevo_estado = "VERIFICANDO..."
-    nuevo_resumen = "Sincronizando feed RSS de la cordillera..."
-    vehiculos = "Consultando..."
+    # Valores por defecto basados en el último estado conocido
+    nuevo_estado = old_data.get('estado', 'VERIFICANDO...')
+    nuevo_resumen = old_data.get('resumen', 'Sincronizando feed RSS...')
+    vehiculos = old_data.get('vehiculos_permitidos', 'Consultando...')
 
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-        response = requests.get(rss_url, headers=headers, timeout=15)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        response = requests.get(rss_url, headers=headers, timeout=20)
         
         if response.status_code == 200:
-            # Parsear el XML del RSS de forma nativa en Python
             root = ET.fromstring(response.content)
-            item = root.find('.//item') # Toma la primera entrada (la más reciente)
+            item = root.find('.//item')
             
             if item is not None:
-                title = item.find('title').text if item.find('title'] is not None else ""
-                # Si el campo title no está, intentamos con text directamente o description
-                description = item.find('description').text if item.find('description') is not None else ""
+                title_el = item.find('title')
+                desc_el = item.find('description')
                 
-                # Unimos título y descripción para tener el comunicado completo
+                title = title_el.text if title_el is not None and title_el.text else ""
+                description = desc_el.text if desc_el.text is not None and desc_el.text else ""
+                
                 texto_completo = f"{title}\n\n{description}".strip()
-                nuevo_resumen = texto_completo[:500] # Limitamos longitud visual
-                
-                texto_upper = texto_completo.upper()
-                if "CERRADO" in texto_upper or "SUSPENDIDO" in texto_upper:
-                    nuevo_estado = "CERRADO"
-                    vehiculos = "Tránsito suspendido temporalmente"
-                elif "ETAPAS" in texto_upper or "PARCIAL" in texto_upper or "RESTRICCIÓN" in texto_upper:
-                    nuevo_estado = "ABIERTO - ETAPAS"
-                    vehiculos = "Sujeto a restricciones por tramos"
-                elif "HABILITADO" in texto_upper or "ABIERTO" in texto_upper:
-                    nuevo_estado = "HABILITADO"
-                    vehiculos = "Todo tipo de vehículos habilitados"
-                else:
-                    nuevo_estado = "INFORME OFICIAL DISPONIBLE"
-                    vehiculos = "Verificar detalle en el reporte"
-            else:
-                nuevo_estado = "FEED VACÍO"
-                nuevo_resumen = "El feed RSS respondió correctamente pero no contiene entradas recientes."
+                if texto_completo:
+                    nuevo_resumen = texto_completo[:500]
+                    
+                    texto_upper = texto_completo.upper()
+                    if "CERRADO" in texto_upper or "SUSPENDIDO" in texto_upper:
+                        nuevo_estado = "CERRADO"
+                        vehiculos = "Tránsito suspendido temporalmente"
+                    elif "ETAPAS" in texto_upper or "PARCIAL" in texto_upper or "RESTRICCIÓN" in texto_upper:
+                        nuevo_estado = "ABIERTO - ETAPAS"
+                        vehiculos = "Sujeto a restricciones por tramos"
+                    elif "HABILITADO" in texto_upper or "ABIERTO" in texto_upper:
+                        nuevo_estado = "HABILITADO"
+                        vehiculos = "Todo tipo de vehículos habilitados"
+                    else:
+                        nuevo_estado = "INFORME OFICIAL DISPONIBLE"
+                        vehiculos = "Verificar detalle en el reporte"
         else:
-            raise Exception(f"Código HTTP {response.status_code}")
+            print(f"Advertencia: El servidor RSS respondió con código {response.status_code}")
 
     except Exception as e:
-        print(f"Aviso leyendo RSS: {e}")
-        # Si hay un fallo de red puntual, mantenemos el último estado seguro conocido
-        nuevo_estado = old_data.get('estado', 'ACTUALIZACIÓN PENDIENTE')
-        nuevo_resumen = old_data.get('resumen', 'Reintentando conexión con el feed RSS.')
-        vehiculos = old_data.get('vehiculos_permitidos', 'Pendiente')
+        print(f"Aviso menor procesando RSS: {e}")
 
-    # Si el texto del comunicado cambió, actualizamos la hora del comunicado. Si es idéntico, la mantenemos.
+    # Si el texto cambió, actualizamos la hora del comunicado. Si es igual, la preservamos.
     if nuevo_resumen.strip() != old_resumen.strip():
         hora_comunicado = hora_actual_str
     else:
@@ -90,7 +84,7 @@ def extraer_estado_rss():
     with open('status.json', 'w', encoding='utf-8') as f:
         json.dump(estado_data, f, ensure_ascii=False, indent=4)
     
-    print(f"RSS procesado con éxito a las {hora_actual_str}")
+    print(f"Ejecución finalizada con éxito a las {hora_actual_str}")
 
 if __name__ == "__main__":
     extraer_estado_rss()
