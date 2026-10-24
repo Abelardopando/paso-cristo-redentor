@@ -29,14 +29,14 @@
   <!-- Tarjeta contenedora principal -->
   <main class="w-full max-w-xl bg-[#151c28] rounded-2xl border border-slate-700/60 shadow-2xl overflow-hidden mb-6">
     
-    <!-- Banner de Estado Destacado (Cambia según status) -->
-    <div id="status-badge" class="p-5 text-center transition-all duration-300 bg-orange-500 text-slate-950">
+    <!-- Banner de Estado Destacado -->
+    <div id="status-badge" class="p-5 text-center transition-all duration-300 bg-slate-800 text-white">
       <div class="flex items-center justify-center gap-2 font-black text-xl sm:text-2xl uppercase tracking-wide">
-        <span id="status-icon">⚠️</span>
+        <span id="status-icon">🔄</span>
         <h2 id="status-title">CARGANDO...</h2>
       </div>
       <p id="status-subtitle" class="text-xs sm:text-sm font-semibold opacity-90 mt-0.5">
-        Obteniendo información oficial...
+        Sincronizando información oficial...
       </p>
     </div>
 
@@ -102,7 +102,7 @@
     </div>
   </section>
 
-  <!-- Lógica de lectura de datos -->
+  <!-- Lógica de lectura de datos y colores dinámicos -->
   <script>
     async function fetchStatus() {
       try {
@@ -126,26 +126,29 @@
         vehicles.textContent = data.vehiculos_permitidos || "No especificado";
         updated.textContent = data.ultima_actualizacion || "Reciente";
 
-        // Ajuste dinámico del Banner según el estado
+        // Ajuste dinámico estricto de colores según estado
         if (estadoRaw.includes("HABILITADO") && !estadoRaw.includes("ETAPAS")) {
+          // Verde brillante para abierto normal
           badge.className = "p-5 text-center transition-all duration-300 bg-emerald-500 text-slate-950";
           icon.textContent = "✅";
-          subtitle.textContent = "Paso abierto para tránsito habitual";
+          subtitle.textContent = "Paso habilitado para tránsito habitual";
         } else if (estadoRaw.includes("CERRADO") || estadoRaw.includes("SUSPENDIDO")) {
+          // Rojo alerta para cerrado / suspendido
           badge.className = "p-5 text-center transition-all duration-300 bg-rose-600 text-white";
           icon.textContent = "⛔";
-          subtitle.textContent = "Tránsito suspendido por condiciones climáticas o de seguridad";
+          subtitle.textContent = "Tránsito suspendido por condiciones climáticas o seguridad";
         } else {
-          // Etapas / Precaución / Parcial
+          // Naranja precaución para etapas, aperturas parciales o revisiones
           badge.className = "p-5 text-center transition-all duration-300 bg-orange-500 text-slate-950";
           icon.textContent = "⚠️";
-          subtitle.textContent = "Revisa las restricciones de horario y tipo de vehículo abajo";
+          subtitle.textContent = "Habilitado por etapas o con restricciones especiales";
         }
 
       } catch (err) {
         console.error(err);
+        badge.className = "p-5 text-center transition-all duration-300 bg-rose-900 text-white";
         document.getElementById('status-title').textContent = "ERROR DE CONEXIÓN";
-        document.getElementById('status-subtitle').textContent = "No se pudo sincronizar con status.json";
+        document.getElementById('status-subtitle').textContent = "No se pudo sincronizar el estado del paso";
       }
     }
 
