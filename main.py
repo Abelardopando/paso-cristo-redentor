@@ -23,7 +23,7 @@ def extraer_estado_rss():
     old_hora_comunicado = old_data.get('hora_comunicado', hora_actual_str)
 
     # 🔗 REEMPLAZA ESTA LÍNEA CON TU ENLACE RSS REAL
-    rss_url = "TU_URL_DE_RSS_AQUÍ" 
+    rss_url = "https://rss.app/feeds/GnQwSF23WseTfEtQ.xml" 
     
     nuevo_estado = "VERIFICANDO..."
     nuevo_resumen = "Sincronizando feed RSS de la cordillera..."
