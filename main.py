@@ -2,15 +2,15 @@ import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import requests
-from bs4 import BeautifulSoup
+import xml.etree.ElementTree as ET
 import os
 
-def extraer_estado_paso():
+def extraer_estado_rss():
     chile_tz = ZoneInfo('America/Santiago')
     ahora = datetime.now(chile_tz)
     hora_actual_str = ahora.strftime('%d/%m/%Y %I:%M %p').replace('AM', 'a. m.').replace('PM', 'p. m.')
 
-    # Cargar datos anteriores para comparar si el comunicado cambió
+    # Cargar datos anteriores para respaldo y comparación de cambios
     old_data = {}
     if os.path.exists('status.json'):
         try:
@@ -22,38 +22,38 @@ def extraer_estado_paso():
     old_resumen = old_data.get('resumen', '')
     old_hora_comunicado = old_data.get('hora_comunicado', hora_actual_str)
 
-    # URL oficial de la Unidad de Pasos Fronterizos
-    url = "https://pasosfronterizos.mininterior.cl/"
+    # 🔗 REEMPLAZA ESTA LÍNEA CON TU ENLACE RSS REAL
+    rss_url = "TU_URL_DE_RSS_AQUÍ" 
     
     nuevo_estado = "VERIFICANDO..."
-    nuevo_resumen = "Sincronizando y analizando el último reporte oficial..."
+    nuevo_resumen = "Sincronizando feed RSS de la cordillera..."
     vehiculos = "Consultando..."
 
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        response = requests.get(url, headers=headers, timeout=15)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        response = requests.get(rss_url, headers=headers, timeout=15)
         
         if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            texto_encontrado = ""
-            elementos = soup.find_all(['div', 'article', 'section', 'p', 'li', 'span'])
+            # Parsear el XML del RSS de forma nativa en Python
+            root = ET.fromstring(response.content)
+            item = root.find('.//item') # Toma la primera entrada (la más reciente)
             
-            for el in elementos:
-                texto = el.get_text(strip=True)
-                if "CRISTO REDENTOR" in texto.upper() or "LIBERTADORES" in texto.upper():
-                    if len(texto) > 40:
-                        texto_encontrado = texto
-                        break
-            
-            if texto_encontrado:
-                nuevo_resumen = texto_encontrado[:500]
-                texto_upper = texto_encontrado.upper()
+            if item is not None:
+                title = item.find('title').text if item.find('title'] is not None else ""
+                # Si el campo title no está, intentamos con text directamente o description
+                description = item.find('description').text if item.find('description') is not None else ""
+                
+                # Unimos título y descripción para tener el comunicado completo
+                texto_completo = f"{title}\n\n{description}".strip()
+                nuevo_resumen = texto_completo[:500] # Limitamos longitud visual
+                
+                texto_upper = texto_completo.upper()
                 if "CERRADO" in texto_upper or "SUSPENDIDO" in texto_upper:
                     nuevo_estado = "CERRADO"
                     vehiculos = "Tránsito suspendido temporalmente"
                 elif "ETAPAS" in texto_upper or "PARCIAL" in texto_upper or "RESTRICCIÓN" in texto_upper:
                     nuevo_estado = "ABIERTO - ETAPAS"
-                    vehiculos = "Sujeto a restricciones por tramos (Ver reporte)"
+                    vehiculos = "Sujeto a restricciones por tramos"
                 elif "HABILITADO" in texto_upper or "ABIERTO" in texto_upper:
                     nuevo_estado = "HABILITADO"
                     vehiculos = "Todo tipo de vehículos habilitados"
@@ -61,23 +61,19 @@ def extraer_estado_paso():
                     nuevo_estado = "INFORME OFICIAL DISPONIBLE"
                     vehiculos = "Verificar detalle en el reporte"
             else:
-                nuevo_estado = "SITIO EN LÍNEA"
-                nuevo_resumen = "Conexión exitosa con Pasos Fronterizos. Esperando actualización del boletín diario."
-                vehiculos = "Sin información de vehículos"
+                nuevo_estado = "FEED VACÍO"
+                nuevo_resumen = "El feed RSS respondió correctamente pero no contiene entradas recientes."
         else:
-            nuevo_estado = "REVISAR FUENTE OFICIAL"
-            nuevo_resumen = f"La plataforma gubernamental respondió con estado HTTP {response.status_code}."
-            vehiculos = "No disponible"
+            raise Exception(f"Código HTTP {response.status_code}")
 
     except Exception as e:
-        print(f"Error en la extracción: {e}")
-        # Si falla la red, mantenemos el último estado seguro conocido
+        print(f"Aviso leyendo RSS: {e}")
+        # Si hay un fallo de red puntual, mantenemos el último estado seguro conocido
         nuevo_estado = old_data.get('estado', 'ACTUALIZACIÓN PENDIENTE')
-        nuevo_resumen = old_data.get('resumen', 'Reintentando conexión con servidores oficiales.')
+        nuevo_resumen = old_data.get('resumen', 'Reintentando conexión con el feed RSS.')
         vehiculos = old_data.get('vehiculos_permitidos', 'Pendiente')
 
-    # LÓGICA CLAVE: Si el texto del comunicado es exactamente igual al anterior, 
-    # MANTENEMOS la hora del comunicado original. Solo cambia si la autoridad emite un texto nuevo.
+    # Si el texto del comunicado cambió, actualizamos la hora del comunicado. Si es idéntico, la mantenemos.
     if nuevo_resumen.strip() != old_resumen.strip():
         hora_comunicado = hora_actual_str
     else:
@@ -94,7 +90,7 @@ def extraer_estado_paso():
     with open('status.json', 'w', encoding='utf-8') as f:
         json.dump(estado_data, f, ensure_ascii=False, indent=4)
     
-    print(f"Verificación completada a las {hora_actual_str} (Comunicado emitido a las {hora_comunicado})")
+    print(f"RSS procesado con éxito a las {hora_actual_str}")
 
 if __name__ == "__main__":
-    extraer_estado_paso()
+    extraer_estado_rss()
