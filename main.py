@@ -15,13 +15,11 @@ def obtener_tiempo_relativo(pub_date_str):
         ahora_chile = datetime.now(chile_tz)
         
         pub_dt = None
-        # Intentar formato RFC 2822 estándar (común en RSS)
         try:
             pub_dt = parsedate_to_datetime(pub_date_str)
         except Exception:
             pass
             
-        # Si falla, intentar formato ISO 8601
         if not pub_dt:
             try:
                 clean_date = pub_date_str.replace('Z', '+00:00')
@@ -83,18 +81,37 @@ def extraer_estado_rss():
         
         if response.status_code == 200:
             root = ET.fromstring(response.content)
-            item = root.find('.//item')
+            items = root.findall('.//item')
             
-            if item is not None:
+            item_encontrado = None
+            
+            # FILTRO INTELIGENTE: Buscamos en el historial del feed el post que hable específicamente de Cristo Redentor
+            for item in items:
                 title_el = item.find('title')
                 desc_el = item.find('description')
-                pub_date_el = item.find('pubDate')
+                
+                title = title_el.text if title_el is not None and title_el.text else ""
+                description = desc_el.text if desc_el.text is not None and desc_el.text else ""
+                
+                texto_control = f"{title} {description}".upper()
+                
+                if "CRISTO REDENTOR" in texto_control or "LIBERTADORES" in texto_control:
+                    item_encontrado = item
+                    break # Encontramos el comunicado correcto, salimos del ciclo
+            
+            # Si no encontró ninguno específico en el lote actual, tomamos el primero como respaldo
+            if not item_encontrado and items:
+                item_encontrado = items[0]
+
+            if item_encontrado is not None:
+                title_el = item_encontrado.find('title')
+                desc_el = item_encontrado.find('description')
+                pub_date_el = item_encontrado.find('pubDate')
                 
                 title = title_el.text if title_el is not None and title_el.text else ""
                 description = desc_el.text if desc_el.text is not None and desc_el.text else ""
                 pub_date_raw = pub_date_el.text if pub_date_el is not None and pub_date_el.text else ""
                 
-                # Limpiar HTML para evitar que el texto se corte en palabras como "septie"
                 description_limpia = BeautifulSoup(description, 'html.parser').get_text(strip=True) if description else ""
                 
                 if description_limpia and len(description_limpia) > len(title):
@@ -136,7 +153,7 @@ def extraer_estado_rss():
     with open('status.json', 'w', encoding='utf-8') as f:
         json.dump(estado_data, f, ensure_ascii=False, indent=4)
     
-    print(f"Sincronización completada con éxito a las {hora_actual_str}")
+    print(f"Sincronización con filtro completada con éxito a las {hora_actual_str}")
 
 if __name__ == "__main__":
     extraer_estado_rss()
