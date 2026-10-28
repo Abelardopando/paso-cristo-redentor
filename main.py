@@ -60,6 +60,7 @@ def extraer_estado_rss():
     ahora = datetime.now(chile_tz)
     hora_actual_str = ahora.strftime('%d/%m/%Y %I:%M %p').replace('AM', 'a. m.').replace('PM', 'p. m.')
 
+    # Cargar datos anteriores para mantenerlos intactos si no hay noticias nuevas del paso
     old_data = {}
     if os.path.exists('status.json'):
         try:
@@ -70,8 +71,9 @@ def extraer_estado_rss():
 
     rss_url = "https://rss.app/feeds/GnQwSF23WseTfEtQ.xml"
     
+    # Heredamos los valores anteriores por defecto
     nuevo_estado = old_data.get('estado', 'VERIFICANDO...')
-    nuevo_resumen = old_data.get('resumen', 'Sincronizando feed RSS...')
+    nuevo_resumen = old_data.get('resumen', 'Esperando el último reporte oficial del Paso Cristo Redentor...')
     vehiculos = old_data.get('vehiculos_permitidos', 'Consultando...')
     tiempo_relativo = old_data.get('tiempo_comunicado', 'Hace un momento')
 
@@ -85,7 +87,7 @@ def extraer_estado_rss():
             
             item_encontrado = None
             
-            # FILTRO INTELIGENTE: Buscamos en el historial del feed el post que hable específicamente de Cristo Redentor
+            # FILTRO ESTRICTO: Buscamos únicamente comunicados que hablen de Cristo Redentor o Los Libertadores
             for item in items:
                 title_el = item.find('title')
                 desc_el = item.find('description')
@@ -97,12 +99,9 @@ def extraer_estado_rss():
                 
                 if "CRISTO REDENTOR" in texto_control or "LIBERTADORES" in texto_control:
                     item_encontrado = item
-                    break # Encontramos el comunicado correcto, salimos del ciclo
+                    break 
             
-            # Si no encontró ninguno específico en el lote actual, tomamos el primero como respaldo
-            if not item_encontrado and items:
-                item_encontrado = items[0]
-
+            # SI SE ENCONTRó un comunicado específico del paso, lo procesamos:
             if item_encontrado is not None:
                 title_el = item_encontrado.find('title')
                 desc_el = item_encontrado.find('description')
@@ -136,6 +135,13 @@ def extraer_estado_rss():
                     else:
                         nuevo_estado = "INFORME OFICIAL DISPONIBLE"
                         vehiculos = "Verificar detalle en el reporte"
+            else:
+                # Si en este escaneo no hay posts nuevos de Cristo Redentor, conservamos los datos previos limpios
+                print("No se encontraron publicaciones nuevas de Cristo Redentor en el feed. Manteniendo último estado válido.")
+                nuevo_estado = old_data.get('estado', 'HABILITADO')
+                nuevo_resumen = old_data.get('resumen', 'Monitoreo activo. Sin nuevos reportes de la autoridad.')
+                vehiculos = old_data.get('vehiculos_permitidos', 'Verificar restricciones')
+                tiempo_relativo = old_data.get('tiempo_comunicado', 'Hace un momento')
         else:
             print(f"Advertencia: Servidor RSS respondió con código {response.status_code}")
 
@@ -153,7 +159,7 @@ def extraer_estado_rss():
     with open('status.json', 'w', encoding='utf-8') as f:
         json.dump(estado_data, f, ensure_ascii=False, indent=4)
     
-    print(f"Sincronización con filtro completada con éxito a las {hora_actual_str}")
+    print(f"Sincronización estricta completada con éxito a las {hora_actual_str}")
 
 if __name__ == "__main__":
     extraer_estado_rss()
