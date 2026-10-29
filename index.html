@@ -1,10 +1,3 @@
-Aquí tienes el código actualizado y completo para tu archivo **`index.html`**.
-
-Esta versión lee directamente la variable `nivel_alerta` entregada por el archivo `status.json` y aplica estilos dinámicos tanto en el banner superior como en los bordes y etiquetas de la tarjeta del "Último Comunicado" (verde para normalidad, ámbar/naranjo para precaución y rojo para cierre).
-
-### Código completo para `index.html`
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,6 +11,11 @@ Esta versión lee directamente la variable `nivel_alerta` entregada por el archi
       50% { opacity: 0.4; transform: scale(0.95); }
     }
     .pulse-dot { animation: pulse-slow 2s infinite ease-in-out; }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .spinning { animation: spin 1s linear infinite; display: inline-block; }
   </style>
 </head>
 <body class="bg-[#0b0f17] text-slate-100 min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 selection:bg-orange-500 selection:text-white">
@@ -36,7 +34,7 @@ Esta versión lee directamente la variable `nivel_alerta` entregada por el archi
   <!-- Tarjeta contenedora principal -->
   <main class="w-full max-w-xl bg-[#151c28] rounded-2xl border border-slate-700/60 shadow-2xl overflow-hidden mb-6">
     
-    <!-- Banner de Estado Dinámico (Basado en nivel_alerta) -->
+    <!-- Banner de Estado Dinámico -->
     <div id="status-badge" class="p-5 text-center transition-all duration-300 bg-slate-800 text-white">
       <div class="flex items-center justify-center gap-2 font-black text-xl sm:text-2xl uppercase tracking-wide">
         <span id="status-icon">🔄</span>
@@ -50,7 +48,7 @@ Esta versión lee directamente la variable `nivel_alerta` entregada por el archi
     <!-- Contenido del Reporte -->
     <div class="p-5 sm:p-6 space-y-5">
       
-      <!-- Bloque del Reporte Oficial -->
+      <!-- Bloque del Reporte Oficial Organizado -->
       <div>
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -61,7 +59,7 @@ Esta versión lee directamente la variable `nivel_alerta` entregada por el archi
           </span>
         </div>
         <div id="summary-container" class="bg-[#0f141f] p-4 rounded-xl border border-slate-800 text-slate-200 text-sm leading-relaxed transition-colors duration-300">
-          <div id="status-summary" class="whitespace-pre-line">
+          <div id="status-summary" class="whitespace-pre-line space-y-2">
             Obteniendo el último comunicado de Pasos Fronterizos...
           </div>
         </div>
@@ -85,14 +83,14 @@ Esta versión lee directamente la variable `nivel_alerta` entregada por el archi
 
     </div>
 
-    <!-- Pie de tarjeta con indicador de Sincronización -->
+    <!-- Pie de tarjeta con indicador de Sincronización y Botón Funcional -->
     <div class="bg-[#0d111a] px-5 py-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400 font-medium">
       <div class="flex items-center gap-2">
         <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 pulse-dot"></span>
         <span id="sync-time">Última sincronización: Sincronizando...</span>
       </div>
-      <button onclick="fetchStatus()" class="hover:text-slate-200 underline transition-colors">
-        Actualizar ahora
+      <button id="btn-actualizar" onclick="fetchStatus()" class="hover:text-slate-200 underline transition-colors cursor-pointer font-semibold flex items-center gap-1.5">
+        <span>Actualizar ahora</span>
       </button>
     </div>
   </main>
@@ -114,36 +112,47 @@ Esta versión lee directamente la variable `nivel_alerta` entregada por el archi
     </div>
   </section>
 
-  <!-- Lógica de lectura de datos y aplicación dinámica -->
+  <!-- Lógica de Petición, Invalidación de Caché y Spinner -->
   <script>
     async function fetchStatus() {
+      const syncTime = document.getElementById('sync-time');
+      const badge = document.getElementById('status-badge');
+      const icon = document.getElementById('status-icon');
+      const btnActualizar = document.getElementById('btn-actualizar');
+
+      // 3. Feedback Visual: Indicador de carga (spinner)
+      icon.className = "spinning";
+      icon.textContent = "⏳";
+      syncTime.textContent = "Última sincronización: Actualizando datos...";
+      btnActualizar.style.opacity = "0.6";
+      btnActualizar.style.pointerEvents = "none";
+
       try {
-        const response = await fetch('status.json?t=' + new Date().getTime());
+        // 1. Invalidación de Caché: Forzar petición limpia sin datos obsoletos
+        const response = await fetch('status.json?t=' + new Date().getTime(), { cache: 'no-store' });
         if (!response.ok) throw new Error("No se pudo leer status.json");
         const data = await response.json();
 
-        const badge = document.getElementById('status-badge');
+        // 2. Disparo de Nueva Búsqueda y Renderizado de Parámetros Vigentes
         const title = document.getElementById('status-title');
         const subtitle = document.getElementById('status-subtitle');
-        const icon = document.getElementById('status-icon');
         const summary = document.getElementById('status-summary');
         const summaryContainer = document.getElementById('summary-container');
         const vehicles = document.getElementById('allowed-vehicles');
         const updated = document.getElementById('last-updated');
-        const syncTime = document.getElementById('sync-time');
         const comunicadoTag = document.getElementById('comunicado-badge-tag');
 
         const estadoRaw = (data.estado || "").toUpperCase();
         const nivelAlerta = (data.nivel_alerta || "verde").toLowerCase();
 
-        // Asignación de datos
+        icon.className = ""; // Remover animación de carga
         title.textContent = estadoRaw || "DESCONOCIDO";
         summary.innerHTML = data.resumen ? data.resumen.replace(/\n/g, '<br>') : "Sin información disponible.";
         vehicles.textContent = data.vehiculos_permitidos || "No especificado";
         updated.textContent = data.tiempo_comunicado || "Reciente";
         syncTime.textContent = "Última sincronización: " + (data.ultima_sincronizacion || "Reciente");
 
-        // Estilos dinámicos según nivel_alerta ("verde", "amarillo", "rojo")
+        // Aplicación de estilos dinámicos según nivel_alerta (Preservado)
         if (nivelAlerta === "verde") {
           badge.className = "p-5 text-center transition-all duration-300 bg-emerald-500 text-slate-950 font-bold";
           icon.textContent = "✅";
@@ -176,16 +185,20 @@ Esta versión lee directamente la variable `nivel_alerta` entregada por el archi
 
       } catch (err) {
         console.error(err);
-        const badge = document.getElementById('status-badge');
+        icon.className = "";
+        icon.textContent = "❌";
         badge.className = "p-5 text-center transition-all duration-300 bg-rose-900 text-white font-bold";
         document.getElementById('status-title').textContent = "ERROR DE CONEXIÓN";
         document.getElementById('status-subtitle').textContent = "No se pudo sincronizar el estado del paso";
+        syncTime.textContent = "Última sincronización: Fallida";
+      } finally {
+        btnActualizar.style.opacity = "1";
+        btnActualizar.style.pointerEvents = "auto";
       }
     }
 
+    // Ejecución inicial al cargar la página
     fetchStatus();
   </script>
 </body>
 </html>
-
-```
