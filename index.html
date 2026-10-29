@@ -112,15 +112,31 @@
     </div>
   </section>
 
-  <!-- Lógica de Petición, Invalidación de Caché y Spinner -->
+  <!-- Lógica de Petición, Invalidación de Caché, Spinner y Formateo Visual -->
   <script>
+    function formatearTextoComunicado(texto) {
+      if (!texto) return "Sin información disponible.";
+      
+      // Limpieza y realce visual con emojis clave según la interpretación
+      let limpio = texto
+        .replace(/Chile\s*→\s*Argentina/gi, '➡️ <b>Tránsito exclusivo Chile ➔ Argentina</b>')
+        .replace(/Argentina\s*→\s*Chile/gi, '⬅️ <b>Tránsito exclusivo Argentina ➔ Chile</b>')
+        .replace(/ambos sentidos/gi, '🔁 <b>Tránsito en ambos sentidos</b>')
+        .replace(/(\d{1,2}:\d{2}\s*h\.?)/gi, '🕒 <b>$1</b>')
+        .replace(/(Habilitado con observaciones|Precaución|Restricción)/gi, '⚠️ <b>$1</b>')
+        .replace(/(Habilitado|Abierto)/gi, '✅ <b>$1</b>')
+        .replace(/(Cerrado|Suspendido)/gi, '⛔ <b>$1</b>');
+
+      return limpio;
+    }
+
     async function fetchStatus() {
       const syncTime = document.getElementById('sync-time');
       const badge = document.getElementById('status-badge');
       const icon = document.getElementById('status-icon');
       const btnActualizar = document.getElementById('btn-actualizar');
 
-      // 3. Feedback Visual: Indicador de carga (spinner)
+      // Feedback Visual: Indicador de carga activo (spinner)
       icon.className = "spinning";
       icon.textContent = "⏳";
       syncTime.textContent = "Última sincronización: Actualizando datos...";
@@ -128,12 +144,11 @@
       btnActualizar.style.pointerEvents = "none";
 
       try {
-        // 1. Invalidación de Caché: Forzar petición limpia sin datos obsoletos
+        // Invalidación estricta de Caché
         const response = await fetch('status.json?t=' + new Date().getTime(), { cache: 'no-store' });
         if (!response.ok) throw new Error("No se pudo leer status.json");
         const data = await response.json();
 
-        // 2. Disparo de Nueva Búsqueda y Renderizado de Parámetros Vigentes
         const title = document.getElementById('status-title');
         const subtitle = document.getElementById('status-subtitle');
         const summary = document.getElementById('status-summary');
@@ -147,12 +162,15 @@
 
         icon.className = ""; // Remover animación de carga
         title.textContent = estadoRaw || "DESCONOCIDO";
-        summary.innerHTML = data.resumen ? data.resumen.replace(/\n/g, '<br>') : "Sin información disponible.";
+        
+        // Aplicar formateo inteligente con emojis y estructura clara
+        summary.innerHTML = formatearTextoComunicado(data.resumen);
+        
         vehicles.textContent = data.vehiculos_permitidos || "No especificado";
         updated.textContent = data.tiempo_comunicado || "Reciente";
         syncTime.textContent = "Última sincronización: " + (data.ultima_sincronizacion || "Reciente");
 
-        // Aplicación de estilos dinámicos según nivel_alerta (Preservado)
+        // Aplicación de estilos dinámicos según nivel_alerta
         if (nivelAlerta === "verde") {
           badge.className = "p-5 text-center transition-all duration-300 bg-emerald-500 text-slate-950 font-bold";
           icon.textContent = "✅";
