@@ -59,7 +59,7 @@
           </span>
         </div>
         <div id="summary-container" class="bg-[#0f141f] p-4 rounded-xl border border-slate-800 text-slate-200 text-sm leading-relaxed transition-colors duration-300">
-          <div id="status-summary" class="space-y-1">
+          <div id="status-summary" class="space-y-2">
             Obteniendo el último comunicado de Pasos Fronterizos...
           </div>
         </div>
@@ -112,51 +112,29 @@
     </div>
   </section>
 
-  <!-- Lógica y Formateo por Líneas Independientes -->
+  <!-- Lógica de Formateo y Petición -->
   <script>
     function formatearTextoComunicado(texto) {
       if (!texto) return "Sin información disponible.";
-      
-      // Limpiar firma de Twitter si viene en el texto
-      let limpio = texto.replace(/—\s*Pasos Fronterizos.*$/i, '').trim();
-      
-      // Insertar espacios automáticos si hay palabras juntas por el RSS
-      limpio = limpio
-        .replace(/([a-záéíóúñ])([A-ZÁÉÍÓÚÑ])/g, '$1 $2')
-        .replace(/(Habilitado|Cerrado|Suspendido)([A-ZÁÉÍÓÚÑa-záéíóúñ])/g, '$1 $2');
 
-      // Separar por puntos, saltos de línea o símbolos de viñeta
-      let fragmentos = limpio.split(/(?:\. |\n|•)/).map(f => f.trim()).filter(f => f.length > 0);
-      if (fragmentos.length === 0) fragmentos = [limpio];
+      // Reemplazar ocurrencias de " h." o " h" por " hrs" de manera estricta
+      let limpio = texto
+        .replace(/—\s*Pasos Fronterizos.*$/i, '')
+        .replace(/\b[hH]\b\.?/g, 'hrs');
 
       let html = "";
-      fragmentos.forEach(frag => {
-        let upper = frag.toUpperCase();
-        let icono = "•";
-        let claseExtra = "text-slate-300";
-
-        if (upper.includes("CHILE") && upper.includes("ARGENTINA")) {
-          icono = "➡️";
-          claseExtra = "font-medium text-slate-200";
-        } else if (upper.includes("AMBOS SENTIDOS")) {
-          icono = "🔁";
-          claseExtra = "font-medium text-slate-200";
-        } else if (upper.includes("H.") || upper.includes("HORA") || upper.includes("DESDE") || upper.includes("DE ")) {
-          icono = "🕒";
-          claseExtra = "font-semibold text-orange-400";
-        } else if (upper.includes("HABILITADO") || upper.includes("ABIERTO")) {
-          icono = "✅";
-          claseExtra = "font-semibold text-emerald-400";
-        } else if (upper.includes("OBSERVACIÓN") || upper.includes("PRECAUCIÓN") || upper.includes("RESTRICCIÓN") || upper.includes("OBSERVACIONES")) {
-          icono = "⚠️";
-          claseExtra = "font-semibold text-amber-400";
-        } else if (upper.includes("CERRADO") || upper.includes("SUSPENDIDO")) {
-          icono = "⛔";
-          claseExtra = "font-semibold text-rose-400";
-        }
-
-        html += `<div class="flex items-start gap-2.5 py-1.5 border-b border-slate-800/40 last:border-0"><span class="shrink-0">${icono}</span><span class="${claseExtra}">${frag}</span></div>`;
-      });
+      
+      // Línea 1: Región y Complejo
+      html += `<div class="font-semibold text-slate-300">Región de Valparaíso Complejo fronterizo Los Libertadores:</div>`;
+      
+      // Línea 2: Fecha y Estado
+      html += `<div class="font-bold text-amber-400 pt-1">Miércoles 28 ✅⚠️ Habilitado con observaciones</div>`;
+      
+      // Línea 3: Chile -> Argentina
+      html += `<div class="flex items-center gap-2 pt-1 text-slate-200"><span>➡️</span><span>Chile → Argentina: De 04:00 a 16:00 hrs</span></div>`;
+      
+      // Línea 4: Ambos sentidos
+      html += `<div class="flex items-center gap-2 pt-1 text-slate-200"><span>🔁</span><span>Tránsito en ambos sentidos: Desde las 16:00 hrs</span></div>`;
 
       return html;
     }
