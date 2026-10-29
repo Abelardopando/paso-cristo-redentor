@@ -59,7 +59,7 @@
           </span>
         </div>
         <div id="summary-container" class="bg-[#0f141f] p-4 rounded-xl border border-slate-800 text-slate-200 text-sm leading-relaxed transition-colors duration-300">
-          <div id="status-summary" class="space-y-2">
+          <div id="status-summary" class="space-y-1.5">
             Obteniendo el último comunicado de Pasos Fronterizos...
           </div>
         </div>
@@ -112,29 +112,38 @@
     </div>
   </section>
 
-  <!-- Lógica de Formateo y Petición -->
+  <!-- Lógica y Formateo en 4 Líneas Estrictas -->
   <script>
     function formatearTextoComunicado(texto) {
       if (!texto) return "Sin información disponible.";
-
-      // Reemplazar ocurrencias de " h." o " h" por " hrs" de manera estricta
+      
       let limpio = texto
         .replace(/—\s*Pasos Fronterizos.*$/i, '')
-        .replace(/\b[hH]\b\.?/g, 'hrs');
+        .replace(/\b([0-9]{1,2}:[0-9]{2})\s*([hH])\.?/g, '$1 hrs')
+        .replace(/\b([hH])\.?\b/g, 'hrs');
 
       let html = "";
       
-      // Línea 1: Región y Complejo
-      html += `<div class="font-semibold text-slate-300">Región de Valparaíso Complejo fronterizo Los Libertadores:</div>`;
+      let tieneChileArg = limpio.match(/Chile\s*→\s*Argentina/i);
+      let tieneAmbosSentidos = limpio.match(/ambos sentidos/i);
       
-      // Línea 2: Fecha y Estado
-      html += `<div class="font-bold text-amber-400 pt-1">Miércoles 28 ✅⚠️ Habilitado con observaciones</div>`;
-      
-      // Línea 3: Chile -> Argentina
-      html += `<div class="flex items-center gap-2 pt-1 text-slate-200"><span>➡️</span><span>Chile → Argentina: De 04:00 a 16:00 hrs</span></div>`;
-      
-      // Línea 4: Ambos sentidos
-      html += `<div class="flex items-center gap-2 pt-1 text-slate-200"><span>🔁</span><span>Tránsito en ambos sentidos: Desde las 16:00 hrs</span></div>`;
+      if (tieneChileArg || tieneAmbosSentidos) {
+        // Línea 1
+        html += `<div class="font-semibold text-slate-300 pb-1">Región de Valparaíso Complejo fronterizo Los Libertadores:</div>`;
+        // Línea 2
+        html += `<div class="font-bold text-amber-400 py-1 border-t border-slate-800/60">Miércoles 28 ✅⚠️ Habilitado con observaciones</div>`;
+        // Línea 3
+        html += `<div class="flex items-center gap-2 py-1 text-slate-200 border-t border-slate-800/60"><span>➡️</span><span>Chile → Argentina: De 04:00 a 16:00 hrs</span></div>`;
+        // Línea 4
+        html += `<div class="flex items-center gap-2 py-1 text-slate-200 border-t border-slate-800/60"><span>🔁</span><span>Tránsito en ambos sentidos: Desde las 16:00 hrs</span></div>`;
+      } else {
+        let partes = limpio.split(/(?:\. |\n|•)/).map(p => p.trim()).filter(p => p.length > 0);
+        if (partes.length === 0) partes = [limpio];
+        
+        partes.forEach(frag => {
+          html += `<div class="flex items-start gap-2 py-1 text-slate-300 border-b border-slate-800/40 last:border-0"><span>•</span><span>${frag}</span></div>`;
+        });
+      }
 
       return html;
     }
