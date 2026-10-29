@@ -48,7 +48,7 @@
     <!-- Contenido del Reporte -->
     <div class="p-5 sm:p-6 space-y-5">
       
-      <!-- Bloque del Reporte Oficial Organizado por Líneas -->
+      <!-- Bloque del Reporte Oficial -->
       <div>
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -89,8 +89,8 @@
         <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 pulse-dot"></span>
         <span id="sync-time">Última sincronización: Sincronizando...</span>
       </div>
-      <button id="btn-actualizar" onclick="fetchStatus()" class="hover:text-slate-200 underline transition-colors cursor-pointer font-semibold flex items-center gap-1.5">
-        <span>Actualizar ahora</span>
+      <button id="btn-actualizar" onclick="fetchStatus()" class="hover:text-slate-200 underline transition-colors cursor-pointer font-semibold">
+        Actualizar ahora
       </button>
     </div>
   </main>
@@ -112,150 +112,108 @@
     </div>
   </section>
 
-  <!-- Lógica de Petición con Fallback y Formateo por Líneas -->
+  <!-- Lógica Estable con Formateo por Líneas -->
   <script>
     function formatearTextoComunicado(texto) {
-      if (!texto) return '<div class="text-slate-400">Sin información disponible.</div>';
+      if (!texto) return "Sin información disponible.";
       
-      let lineasHtml = "";
-      let fragmentos = texto.split(/(?:\. |\n|•)/).map(f => f.trim()).filter(f => f.length > 0);
-      
-      if (fragmentos.length === 0) {
-        fragmentos = [texto];
-      }
+      // Separar frases por puntos o saltos de línea de forma limpia
+      let fragmentos = texto.split(/(?:\. |\n)/).map(f => f.trim()).filter(f => f.length > 0);
+      if (fragmentos.length === 0) fragmentos = [texto];
 
+      let html = "";
       fragmentos.forEach(frag => {
-        let fUpper = frag.toUpperCase();
+        let upper = frag.toUpperCase();
         let icono = "•";
-        let claseExtra = "text-slate-300";
-
-        if (fUpper.includes("CHILE") && fUpper.includes("ARGENTINA")) {
+        
+        if (upper.includes("CHILE") || upper.includes("ARGENTINA") || upper.includes("SENTIDOS")) {
           icono = "➡️";
-          claseExtra = "font-medium text-slate-200";
-        } else if (fUpper.includes("AMBOS SENTIDOS")) {
-          icono = "🔁";
-          claseExtra = "font-medium text-slate-200";
-        } else if (fUpper.includes("H") && (fUpper.includes("DE") || fUpper.includes("DESDE"))) {
+        } else if (upper.includes("H.") || upper.includes("HORA") || upper.includes("DESDE")) {
           icono = "🕒";
-          claseExtra = "font-semibold text-orange-400";
-        } else if (fUpper.includes("HABILITADO") || fUpper.includes("ABIERTO")) {
+        } else if (upper.includes("HABILITADO") || upper.includes("ABIERTO")) {
           icono = "✅";
-          claseExtra = "font-semibold text-emerald-400";
-        } else if (fUpper.includes("OBSERVACIONES") || fUpper.includes("PRECAUCIÓN") || fUpper.includes("RESTRICCIÓN")) {
+        } else if (upper.includes("OBSERVACIÓN") || upper.includes("PRECAUCIÓN") || upper.includes("RESTRICCIÓN")) {
           icono = "⚠️";
-          claseExtra = "font-semibold text-amber-400";
-        } else if (fUpper.includes("CERRADO") || fUpper.includes("SUSPENDIDO")) {
-          icono = "⛔";
-          claseExtra = "font-semibold text-rose-400";
         }
 
-        lineasHtml += `<div class="flex items-start gap-2 py-1"><span class="shrink-0">${icono}</span><span class="${claseExtra}">${frag}</span></div>`;
+        html += `<div class="flex items-start gap-2 py-1"><span>${icono}</span><span>${frag}</span></div>`;
       });
 
-      return lineasHtml;
+      return html;
     }
 
     async function fetchStatus() {
-      const syncTime = document.getElementById('sync-time');
-      const badge = document.getElementById('status-badge');
       const icon = document.getElementById('status-icon');
-      const btnActualizar = document.getElementById('btn-actualizar');
-
       if (icon) {
         icon.className = "spinning";
         icon.textContent = "⏳";
       }
-      if (syncTime) syncTime.textContent = "Última sincronización: Actualizando datos...";
-      if (btnActualizar) {
-        btnActualizar.style.opacity = "0.6";
-        btnActualizar.style.pointerEvents = "none";
-      }
-
-      // Objeto de respaldo (fallback) en caso de que status.json tarde o falle
-      let data = {
-        estado: "HABILITADO",
-        nivel_alerta: "verde",
-        resumen: "Monitoreo activo. Sistema conectado y operativo.",
-        vehiculos_permitidos: "Todo tipo de vehículos habilitados",
-        tiempo_comunicado: "Hace un momento",
-        ultima_sincronizacion: "Reciente"
-      };
 
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const response = await fetch('status.json?t=' + new Date().getTime(), { cache: 'no-store' });
+        if (!response.ok) throw new Error("No se pudo leer status.json");
+        const data = await response.json();
 
-        const response = await fetch('status.json?t=' + new Date().getTime(), { 
-          cache: 'no-store',
-          signal: controller.signal 
-        });
-        clearTimeout(timeoutId);
+        const badge = document.getElementById('status-badge');
+        const title = document.getElementById('status-title');
+        const subtitle = document.getElementById('status-subtitle');
+        const summary = document.getElementById('status-summary');
+        const summaryContainer = document.getElementById('summary-container');
+        const vehicles = document.getElementById('allowed-vehicles');
+        const updated = document.getElementById('last-updated');
+        const syncTime = document.getElementById('sync-time');
+        const comunicadoTag = document.getElementById('comunicado-badge-tag');
 
-        if (response.ok) {
-          const jsonData = await response.json();
-          data = { ...data, ...jsonData };
-        }
-      } catch (err) {
-        console.warn("Aviso: No se pudo cargar status.json, usando valores por defecto.", err);
-      }
+        const estadoRaw = (data.estado || "").toUpperCase();
+        const nivelAlerta = (data.nivel_alerta || "verde").toLowerCase();
 
-      const title = document.getElementById('status-title');
-      const subtitle = document.getElementById('status-subtitle');
-      const summary = document.getElementById('status-summary');
-      const summaryContainer = document.getElementById('summary-container');
-      const vehicles = document.getElementById('allowed-vehicles');
-      const updated = document.getElementById('last-updated');
-      const comunicadoTag = document.getElementById('comunicado-badge-tag');
+        if (icon) icon.className = "";
+        title.textContent = estadoRaw || "DESCONOCIDO";
+        summary.innerHTML = formatearTextoComunicado(data.resumen);
+        vehicles.textContent = data.vehiculos_permitidos || "No especificado";
+        updated.textContent = data.tiempo_comunicado || "Reciente";
+        syncTime.textContent = "Última sincronización: " + (data.ultima_sincronizacion || "Reciente");
 
-      const estadoRaw = (data.estado || "").toUpperCase();
-      const nivelAlerta = (data.nivel_alerta || "verde").toLowerCase();
-
-      if (icon) icon.className = "";
-      if (title) title.textContent = estadoRaw || "DESCONOCIDO";
-      if (summary) summary.innerHTML = formatearTextoComunicado(data.resumen);
-      if (vehicles) vehicles.textContent = data.vehiculos_permitidos || "No especificado";
-      if (updated) updated.textContent = data.tiempo_comunicado || "Reciente";
-      if (syncTime) syncTime.textContent = "Última sincronización: " + (data.ultima_sincronizacion || "Reciente");
-
-      if (badge && summaryContainer && comunicadoTag && icon) {
         if (nivelAlerta === "verde") {
           badge.className = "p-5 text-center transition-all duration-300 bg-emerald-500 text-slate-950 font-bold";
-          icon.textContent = "✅";
-          if (subtitle) subtitle.textContent = "Paso habilitado para tránsito operativo";
+          if (icon) icon.textContent = "✅";
+          subtitle.textContent = "Paso habilitado para tránsito operativo";
           summaryContainer.className = "bg-[#0f141f] p-4 rounded-xl border border-emerald-500/40 text-slate-200 text-sm leading-relaxed transition-colors duration-300";
           comunicadoTag.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
           comunicadoTag.textContent = "Normal";
         } else if (nivelAlerta === "amarillo") {
           badge.className = "p-5 text-center transition-all duration-300 bg-amber-500 text-slate-950 font-bold";
-          icon.textContent = "⚠️";
-          if (subtitle) subtitle.textContent = "Habilitado con restricciones, etapas u observaciones";
+          if (icon) icon.textContent = "⚠️";
+          subtitle.textContent = "Habilitado con restricciones, etapas u observaciones";
           summaryContainer.className = "bg-[#0f141f] p-4 rounded-xl border border-amber-500/50 text-slate-200 text-sm leading-relaxed transition-colors duration-300";
           comunicadoTag.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30";
           comunicadoTag.textContent = "Precaución";
         } else if (nivelAlerta === "rojo") {
           badge.className = "p-5 text-center transition-all duration-300 bg-rose-600 text-white font-bold";
-          icon.textContent = "⛔";
-          if (subtitle) subtitle.textContent = "Tránsito suspendido temporalmente por seguridad o clima";
+          if (icon) icon.textContent = "⛔";
+          subtitle.textContent = "Tránsito suspendido temporalmente por seguridad o clima";
           summaryContainer.className = "bg-[#0f141f] p-4 rounded-xl border border-rose-600/50 text-slate-200 text-sm leading-relaxed transition-colors duration-300";
           comunicadoTag.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-600/20 text-rose-400 border border-rose-600/30";
           comunicadoTag.textContent = "Cerrado";
         } else {
           badge.className = "p-5 text-center transition-all duration-300 bg-slate-700 text-white font-bold";
-          icon.textContent = "ℹ️";
-          if (subtitle) subtitle.textContent = "Informe oficial disponible";
+          if (icon) icon.textContent = "ℹ️";
+          subtitle.textContent = "Informe oficial disponible";
           summaryContainer.className = "bg-[#0f141f] p-4 rounded-xl border border-slate-700 text-slate-200 text-sm leading-relaxed transition-colors duration-300";
           comunicadoTag.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300";
           comunicadoTag.textContent = "Informativo";
         }
-      }
 
-      if (btnActualizar) {
-        btnActualizar.style.opacity = "1";
-        btnActualizar.style.pointerEvents = "auto";
+      } catch (err) {
+        console.error(err);
+        if (icon) icon.className = "";
+        const badge = document.getElementById('status-badge');
+        badge.className = "p-5 text-center transition-all duration-300 bg-rose-900 text-white font-bold";
+        document.getElementById('status-title').textContent = "ERROR DE CONEXIÓN";
+        document.getElementById('status-subtitle').textContent = "No se pudo sincronizar el estado del paso";
       }
     }
 
-    // Ejecución inicial al cargar la página
     fetchStatus();
   </script>
 </body>
