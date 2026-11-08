@@ -1,8 +1,8 @@
 {
-    "estado": "HABILITADO CON OBSERVACIONES",
-    "nivel_alerta": "amarillo",
-    "resumen": "Pasos Fronterizos@UPFronterizos1hRegión de Los Lagos\n\nComplejo Fronterizo Cardenal Antonio Samoré\nEstado: habilitado para todo tipo de vehículos\n               \nHorario de funcionamiento: 08:00 a 19:00 horas (CHI).956Pasos Fronterizos@UPFronterizos1hRegión de La Araucanía\n\nComplejo Fronterizo Pino Hachado: ✅Habilitado✅ \n\nHORARIO FUNCIONAMIENTO: \nSALIDA: 08:00 a 19:00 hrs\nINGRESO: 08:00a 20:00 hrs717Pasos Fronterizos@UPFronterizos1hRegión de Valparaíso\n\nComplejo fronterizo Los Libertadores: ✅Habilitado✅ para todo tipo de vehículos.\n\nHorario de verano: 24 hrs\nCircular con precaución.\nCielo nublado.21830Pasos Fronterizos@UPFronterizosNov 2Región de Los Lagos\n\nComplejo Fronterizo Cardenal Antonio Samoré\n\nEstado: ✅Habilitado para todo tipo de vehículos               \nHorario de funcionamiento: 08:00 a 19:00 horas.13.1KPasos Fronterizos@UPFronterizosNov 2Región de La Araucanía\n\nComplejo Fronterizo Pino Hachado: ✅ Habilitado ✅ \n\nHORARIO FUNCIONAMIENTO: \nSALIDA: 08:00 a 19:00 hrs\nINGRESO: 08:00a 20:00 hrs1113.8K",
-    "vehiculos_permitidos": "Todo tipo de vehículos habilitados",
+    "estado": "CERRADO",
+    "nivel_alerta": "rojo",
+    "resumen": "Pasos Fronterizos@UPFronterizos11hRegión del Maule\n\n🔹Complejo Fronterizo San Pedro de Vergara ⛔ CERRADO⛔️ por término de temporada estival.\n\n🔹Complejo Fronterizo Pehuenche se encuentra ⛔ CERRADO⛔️ por pronóstico de mal tiempo en la zona.232.1KPasos Fronterizos@UPFronterizos12hRegión de Valparaíso\n \n🔹Complejo fronterizo Los Libertadores: ✅Habilitado✅ para todo tipo de vehículos.\n \nHorario de verano: 24 hrs \n16 de septiembre 2026 al 31 de mayo 2027.\n\nCircular con precaución1.9KPasos Fronterizos@UPFronterizosNov 6Región de La Araucanía\n\nComplejo Fronterizo Pino Hachado: ✅ Habilitado \n\nHORARIO FUNCIONAMIENTO: \nSALIDA: 08:00 a 19:00 hrs\nINGRESO: 08:00a 20:00 hrs23.1KPasos Fronterizos@UPFronterizosNov 6Región de Valparaíso\n \nComplejo fronterizo Los Libertadores: ✅Habilitado ✅ para todo tipo de vehículos.\n \nHorario de verano: 24 hrs \n16 de septiembre 2026 al 31 de mayo 2027.122.8KPasos Fronterizos@UPFronterizosNov 6Region de Antofagasta \n\nComplejo Fronterizo OLLAGÜE: ✅Habilitado.\n\nComplejo Fronterizo Integrado JAMA:✅Habilitado.\n\nComplejo Fronterizo HITO CAJÓN✅Habilitado.\n\nComplejo Fronterizo Integrado SICO✅Habilitado.\n\nOficina SAN PEDRO DE ATACAMA✅Habilitado.1.9K",
+    "vehiculos_permitidos": "Tránsito suspendido temporalmente",
     "tiempo_comunicado": "Hace un momento",
-    "ultima_sincronizacion": "07/11/2026 08:28 p. m."
+    "ultima_sincronizacion": "07/11/2026 09:44 p. m."
 }
